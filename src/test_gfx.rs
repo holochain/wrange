@@ -14,7 +14,15 @@ pub fn gfx(s: &str) -> Wrange<u8> {
     let p0 = endpoints.next();
     let p1 = endpoints.next();
     match (p0, p1) {
-        (None, None) => Wrange::Empty,
+        (None, None) => {
+            if s.chars().all(|c| c == ' ') {
+                Wrange::Empty
+            } else if s.chars().all(|c| c == '-') {
+                Wrange::Full
+            } else {
+                panic!("Malformed graphical representation: |{}|", s);
+            }
+        }
         (Some(p0), None) => {
             let bound = char_to_bound(p0);
             Wrange::new(bound.clone(), bound)
@@ -34,9 +42,9 @@ pub fn gfx(s: &str) -> Wrange<u8> {
                 .chain(s.chars().rev().take_while(|x| !pat.contains(x))); // take the right side
 
             if middle.clone().all(|x| x == '-') && outside.clone().all(|x| x == ' ') {
-                Wrange::Convergent(char_to_bound(p0), char_to_bound(p1))
+                Wrange::new(char_to_bound(p0), char_to_bound(p1))
             } else if middle.clone().all(|x| x == ' ') && outside.clone().all(|x| x == '-') {
-                Wrange::Divergent(char_to_bound(p1), char_to_bound(p0))
+                Wrange::new(char_to_bound(p1), char_to_bound(p0))
             } else {
                 panic!("Malformed graphical representation: |{}|", s);
             }
@@ -52,6 +60,9 @@ mod tests {
 
     #[test]
     fn checks() {
+        assert_eq!(gfx("        "), Wrange::Empty);
+        assert_eq!(gfx("--------"), Wrange::Full);
+
         assert_eq!(gfx("  o     "), Wrange::new_inclusive(2, 2));
         assert_eq!(gfx("   x    "), Wrange::new_exclusive(3, 3));
         assert_eq!(gfx("o       "), Wrange::new_inclusive(0, 0));

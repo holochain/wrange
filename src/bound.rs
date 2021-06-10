@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Bound<T> {
     Exclusive(T),
     Inclusive(T),
@@ -56,10 +56,42 @@ where
         .to_owned()
     }
 
-    fn inner(&self) -> &T {
+    pub(crate) fn inner(&self) -> &T {
         match self {
             Bound::Inclusive(ref t) => t,
             Bound::Exclusive(ref t) => t,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::Constructor)]
+pub struct Bounds<T>(pub(crate) Bound<T>, pub(crate) Bound<T>);
+
+impl<T> Bounds<T>
+where
+    T: Clone + PartialEq + Eq + PartialOrd + Ord,
+{
+    /// Perform some sensible normalization:
+    /// Two overlapping (colocated) endpoints with both inclusive and exclusive
+    /// representation are equivalent to two overlapping inclusive endpoints
+    pub fn normalized(self) -> Self {
+        use Bound::*;
+        match self {
+            Bounds(Exclusive(ref x), ref i @ Inclusive(_)) => {
+                if x == i.inner() {
+                    Bounds(i.clone(), i.clone())
+                } else {
+                    self
+                }
+            }
+            Bounds(ref i @ Inclusive(_), Exclusive(ref y)) => {
+                if i.inner() == y {
+                    Bounds(i.clone(), i.clone())
+                } else {
+                    self
+                }
+            }
+            _ => self,
         }
     }
 }
@@ -69,7 +101,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check() {
+    fn test_minmax() {
         use Bound::*;
 
         let e3 = Exclusive(3);
@@ -86,5 +118,19 @@ mod tests {
         assert_eq!(Bound::min(&e3, &i7), e3);
         assert_eq!(Bound::min(&i3, &e7), i3);
         assert_eq!(Bound::min(&e3, &e7), e3);
+    }
+
+    #[test]
+    fn test_normalization() {
+        use Bound::*;
+        let e3 = Exclusive(3);
+        let e7 = Exclusive(7);
+        let i3 = Inclusive(3);
+        let i7 = Inclusive(7);
+
+        assert_eq!(Bounds(e3, i3).normalized(), Bounds(i3, i3));
+        assert_eq!(Bounds(i3, e3).normalized(), Bounds(i3, i3));
+        assert_eq!(Bounds(i3, e7).normalized(), Bounds(i3, e7));
+        assert_eq!(Bounds(e3, i7).normalized(), Bounds(e3, i7));
     }
 }
