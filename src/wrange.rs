@@ -73,17 +73,24 @@ where
         use Wrange::*;
         match (a, b) {
             (Empty, _) | (_, Empty) => vec![Empty].into(),
+
             (Full, x) | (x, Full) => vec![x.clone()].into(),
+
             (Convergent(Bounds(a0, a1)), Convergent(Bounds(b0, b1))) => {
                 if a0 > b0 {
                     // flip it so that a0 <= b0 always
                     Self::intersection(b, a)
                 } else if a1 < b0 {
+                    // covers all disjoint cases
                     vec![Empty].into()
-                } else if a1 == b0 {
+                } else if a1.overlaps(b0) {
+                    // e.g.
+                    // |  o----o       |
+                    // |       x----o  |
                     let bound = Bound::intersection_min(&a1, &b0);
                     vec![Self::new(bound.clone(), bound)].into()
                 } else {
+                    // all other intersecting cases are covered here
                     vec![Self::new(
                         Bound::intersection_max(&a0, &b0),
                         Bound::intersection_min(&a1, &b1),
@@ -91,12 +98,15 @@ where
                     .into()
                 }
             }
+
             (Divergent(Bounds(a0, a1)), Divergent(Bounds(b0, b1))) => vec![Self::new(
                 Bound::intersection_max(&a0, &b0),
                 Bound::intersection_min(&a1, &b1),
             )]
             .into(),
+
             (Convergent(Bounds(_, _)), Divergent(Bounds(_, _))) => Self::intersection(b, a),
+
             (Divergent(Bounds(a0, a1)), Convergent(Bounds(b0, b1))) => {
                 // four possible cases:
                 // 1: a1 < b0 && a0 > b1

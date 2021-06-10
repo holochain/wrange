@@ -44,7 +44,7 @@ where
     T: PartialOrd + Clone,
 {
     pub fn intersection_min(a: &Self, b: &Self) -> Self {
-        if a.inner() == b.inner() {
+        if a.overlaps(b) {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => b,
                 (Bound::Exclusive(_), Bound::Inclusive(_)) => a,
@@ -59,7 +59,7 @@ where
     }
 
     pub fn intersection_max(a: &Self, b: &Self) -> Self {
-        if a.inner() == b.inner() {
+        if a.overlaps(b) {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => b,
                 (Bound::Exclusive(_), Bound::Inclusive(_)) => a,
@@ -74,7 +74,7 @@ where
     }
 
     pub fn union_min(a: &Self, b: &Self) -> Self {
-        if a.inner() == b.inner() {
+        if a.overlaps(b) {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => a,
                 (Bound::Exclusive(_), Bound::Inclusive(_)) => b,
@@ -89,7 +89,7 @@ where
     }
 
     pub fn union_max(a: &Self, b: &Self) -> Self {
-        if a.inner() == b.inner() {
+        if a.overlaps(b) {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => a,
                 (Bound::Exclusive(_), Bound::Inclusive(_)) => b,
@@ -101,6 +101,10 @@ where
             b
         }
         .to_owned()
+    }
+
+    pub fn overlaps(&self, other: &Self) -> bool {
+        self.inner() == other.inner()
     }
 
     pub(crate) fn inner(&self) -> &T {
