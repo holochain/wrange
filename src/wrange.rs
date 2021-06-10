@@ -76,9 +76,13 @@ where
             (Full, x) | (x, Full) => vec![x.clone()].into(),
             (Convergent(Bounds(a0, a1)), Convergent(Bounds(b0, b1))) => {
                 if a0 > b0 {
+                    // flip it so that a0 <= b0 always
                     Self::intersection(b, a)
                 } else if a1 < b0 {
                     vec![Empty].into()
+                } else if a1 == b0 {
+                    let bound = Bound::intersection_min(&a1, &b0);
+                    vec![Self::new(bound.clone(), bound)].into()
                 } else {
                     vec![Self::new(
                         Bound::intersection_max(&a0, &b0),

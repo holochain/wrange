@@ -34,6 +34,12 @@ fn test_intersection_full_empty() {
 #[test]
 fn test_intersection_convergent_convergent() {
     assert_intersection_single!(
+        gfx("  o---------o   "),
+        gfx("     o----o     "),
+        gfx("     o----o     "),
+    );
+
+    assert_intersection_single!(
         gfx("  o-----o       "),
         gfx("     o----o     "),
         gfx("     o--o       "),
@@ -58,20 +64,20 @@ fn test_intersection_convergent_convergent() {
     );
 
     assert_intersection_single!(
+        gfx("  o----o       "),
         gfx("       o----o  "),
-        gfx("  o----o       "),
         gfx("       o       "),
     );
 
     assert_intersection_single!(
-        gfx("       x----o  "),
         gfx("  o----o       "),
+        gfx("       x----o  "),
         gfx("               "),
     );
 
     assert_intersection_single!(
-        gfx("       x----o  "),
         gfx("  o----x       "),
+        gfx("       x----o  "),
         gfx("               "),
     );
 }
@@ -112,7 +118,40 @@ fn test_intersection_divergent_divergent() {
         gfx("----o    o------"),
         gfx("-----------o o--"),
         gfx("         o-o    "),
-        gfx("             o-o"),
+        gfx("----o        o--"),
+    );
+
+    assert_intersection_double!(
+        gfx("------o    o----"),
+        gfx("--o o-----------"),
+        gfx("    o-o         "),
+        gfx("--o        o----"),
+    );
+
+    assert_intersection_single!(
+        gfx("----x    o------"),
+        gfx("---------x o----"),
+        gfx("----x      o----"),
+    );
+
+    assert_intersection_double!(
+        gfx("----x    o------"),
+        gfx("---------o o----"),
+        gfx("         o      "),
+        gfx("----x      o----"),
+    );
+
+    assert_intersection_single!(
+        gfx("------o    o----"),
+        gfx("--o   x---------"),
+        gfx("--o        o----"),
+    );
+
+    assert_intersection_double!(
+        gfx("------o    o----"),
+        gfx("--o   o---------"),
+        gfx("      o         "),
+        gfx("--o        o----"),
     );
 
     assert_intersection_single!(

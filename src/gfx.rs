@@ -1,3 +1,5 @@
+//! Allows easy construction of small ranges via ASCII art, useful for testing
+
 use crate::*;
 
 fn char_to_bound((i, s): (usize, &str)) -> Bound<u8> {
