@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone)]
 pub enum Bound<T> {
     Exclusive(T),
     Inclusive(T),
@@ -22,11 +22,52 @@ where
     }
 }
 
+impl<T> PartialEq for Bound<T>
+where
+    T: PartialEq + Ord + Clone,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.inner() == other.inner()
+    }
+}
+
+impl<T> Eq for Bound<T> where T: PartialEq + Ord + Clone {}
+
 impl<T> Bound<T>
 where
     T: PartialOrd + Ord + Clone,
 {
-    pub fn min(a: &Self, b: &Self) -> Self {
+    pub fn intersection_min(a: &Self, b: &Self) -> Self {
+        if a.inner() == b.inner() {
+            match (a, b) {
+                (Bound::Inclusive(_), Bound::Exclusive(_)) => b,
+                (Bound::Exclusive(_), Bound::Inclusive(_)) => a,
+                _ => a,
+            }
+        } else if a < b {
+            a
+        } else {
+            b
+        }
+        .to_owned()
+    }
+
+    pub fn intersection_max(a: &Self, b: &Self) -> Self {
+        if a.inner() == b.inner() {
+            match (a, b) {
+                (Bound::Inclusive(_), Bound::Exclusive(_)) => b,
+                (Bound::Exclusive(_), Bound::Inclusive(_)) => a,
+                _ => a,
+            }
+        } else if a > b {
+            a
+        } else {
+            b
+        }
+        .to_owned()
+    }
+
+    pub fn union_min(a: &Self, b: &Self) -> Self {
         if a.inner() == b.inner() {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => a,
@@ -41,7 +82,7 @@ where
         .to_owned()
     }
 
-    pub fn max(a: &Self, b: &Self) -> Self {
+    pub fn union_max(a: &Self, b: &Self) -> Self {
         if a.inner() == b.inner() {
             match (a, b) {
                 (Bound::Inclusive(_), Bound::Exclusive(_)) => a,
@@ -65,7 +106,9 @@ where
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, derive_more::Constructor)]
-pub struct Bounds<T>(pub(crate) Bound<T>, pub(crate) Bound<T>);
+pub struct Bounds<T>(pub(crate) Bound<T>, pub(crate) Bound<T>)
+where
+    T: Clone + PartialEq + Eq + PartialOrd + Ord;
 
 impl<T> Bounds<T>
 where
@@ -98,7 +141,33 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering;
+
     use super::*;
+
+    #[test]
+    fn test_equality() {
+        use Bound::*;
+
+        let e3 = Exclusive(3);
+        let e7 = Exclusive(7);
+        let i3 = Inclusive(3);
+        let i7 = Inclusive(7);
+
+        assert_eq!(i3.cmp(&i3), Ordering::Equal);
+        assert_eq!(i3.cmp(&e3), Ordering::Equal);
+        assert_eq!(e3.cmp(&i3), Ordering::Equal);
+
+        assert_eq!(e3.cmp(&i7), Ordering::Less);
+        assert_eq!(i3.cmp(&e7), Ordering::Less);
+
+        assert_eq!(e7.cmp(&i3), Ordering::Greater);
+        assert_eq!(i7.cmp(&e3), Ordering::Greater);
+
+        assert!(e3 <= i3);
+        assert!(i3 <= e3);
+        assert!(i3 == e3);
+    }
 
     #[test]
     fn test_minmax() {
@@ -109,15 +178,19 @@ mod tests {
         let i3 = Inclusive(3);
         let i7 = Inclusive(7);
 
-        // Inclusive always wins tie-breakers
-        assert_eq!(Bound::min(&i3, &e3), i3);
-        assert_eq!(Bound::min(&e3, &i3), i3);
+        // Inclusive always wins tie-breakers in unions
+        assert_eq!(Bound::union_min(&i3, &e3), i3);
+        assert_eq!(Bound::union_min(&e3, &i3), i3);
+
+        // Exclusive always wins tie-breakers in intersections
+        assert_eq!(Bound::intersection_min(&i3, &e3), e3);
+        assert_eq!(Bound::intersection_min(&e3, &i3), e3);
 
         // Otherwise, the inner value dictates the order
-        assert_eq!(Bound::min(&i3, &i7), i3);
-        assert_eq!(Bound::min(&e3, &i7), e3);
-        assert_eq!(Bound::min(&i3, &e7), i3);
-        assert_eq!(Bound::min(&e3, &e7), e3);
+        assert_eq!(Bound::union_min(&i3, &i7), i3);
+        assert_eq!(Bound::union_min(&e3, &i7), e3);
+        assert_eq!(Bound::intersection_min(&i3, &e7), i3);
+        assert_eq!(Bound::intersection_min(&e3, &e7), e3);
     }
 
     #[test]

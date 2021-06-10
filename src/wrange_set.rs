@@ -1,13 +1,13 @@
 use crate::Wrange;
 
-#[derive(derive_more::From, derive_more::IntoIterator)]
+#[derive(Debug, derive_more::From, derive_more::IntoIterator)]
 pub struct WrangeSet<T>(Vec<Wrange<T>>)
 where
-    T: PartialOrd + Ord + Clone;
+    T: PartialOrd + Ord + Clone + std::fmt::Debug;
 
 impl<T> WrangeSet<T>
 where
-    T: PartialOrd + Ord + Clone,
+    T: PartialOrd + Ord + Clone + std::fmt::Debug,
 {
     pub fn normalized(self) -> Self {
         Self(self.0.into_iter().map(|r| r.normalized()).collect())

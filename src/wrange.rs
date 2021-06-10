@@ -3,7 +3,7 @@ use crate::{bound::Bounds, Bound, WrangeSet};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Wrange<T>
 where
-    T: PartialOrd + Ord + Clone,
+    T: PartialOrd + Ord + Clone + std::fmt::Debug,
 {
     Empty,
     Convergent(Bounds<T>),
@@ -13,7 +13,7 @@ where
 
 impl<T> Wrange<T>
 where
-    T: PartialOrd + Ord + Clone,
+    T: PartialOrd + Ord + Clone + std::fmt::Debug,
 {
     pub fn new(a: Bound<T>, b: Bound<T>) -> Self {
         if a > b {
@@ -80,22 +80,52 @@ where
                 } else if a1 < b0 {
                     vec![Empty].into()
                 } else {
-                    vec![Self::new(Bound::max(&a0, &b0), Bound::min(&a1, &b1))].into()
+                    vec![Self::new(
+                        Bound::intersection_max(&a0, &b0),
+                        Bound::intersection_min(&a1, &b1),
+                    )]
+                    .into()
                 }
             }
-            (Divergent(Bounds(a0, a1)), Divergent(Bounds(b0, b1))) => {
-                vec![Self::new(Bound::max(&a0, &b0), Bound::min(&a1, &b1))].into()
-            }
+            (Divergent(Bounds(a0, a1)), Divergent(Bounds(b0, b1))) => vec![Self::new(
+                Bound::intersection_max(&a0, &b0),
+                Bound::intersection_min(&a1, &b1),
+            )]
+            .into(),
             (Convergent(Bounds(_, _)), Divergent(Bounds(_, _))) => Self::intersection(b, a),
             (Divergent(Bounds(a0, a1)), Convergent(Bounds(b0, b1))) => {
-                // four cases:
+                // four possible cases:
+                // 1: a1 < b0 && a0 > b1
+                //   |---o        o---|
+                //   |     o----o     |
+                // 2: a1 >= b0 && a0 > b1
+                //   |---o        o---|
+                //   | o-----o        |
+                // 3: a1 < b0 && a0 <= b1
+                //   |---o        o---|
+                //   |        o-----o |
+                // 4: a1 >= b0 && a0 <= b1  (can lead to a double intersection)
+                //   |----o      o----|
+                //   | o------------o |
                 match (a1 >= b0, a0 <= b1) {
                     (false, false) => vec![Empty],
-                    (true, false) => vec![Self::new(Bound::min(a1, b0), a1.clone())],
-                    (false, true) => vec![Self::new(a0.clone(), Bound::max(a0, b1))],
+                    (true, false) => vec![Self::new(
+                        Bound::intersection_min(a1, b0),
+                        Bound::intersection_min(a1, b1),
+                    )],
+                    (false, true) => vec![Self::new(
+                        Bound::intersection_max(a0, b0),
+                        Bound::intersection_max(a0, b1),
+                    )],
                     (true, true) => vec![
-                        Self::new(Bound::min(a1, b0), Bound::max(a1, b0)),
-                        Self::new(Bound::min(a0, b1), Bound::max(a0, b1)),
+                        Self::new(
+                            Bound::intersection_min(a1, b0),
+                            Bound::intersection_max(a1, b0),
+                        ),
+                        Self::new(
+                            Bound::intersection_min(a0, b1),
+                            Bound::intersection_max(a0, b1),
+                        ),
                     ],
                 }
                 .into()
@@ -109,14 +139,14 @@ mod tests {
     use super::*;
     use crate::test_gfx::gfx;
 
-    macro_rules! assert_intersects_single {
+    macro_rules! assert_intersection_single {
         ($a: expr, $b: expr, $e: expr $(,)?) => {
             assert_eq!(Wrange::<u8>::intersection(&$a, &$b).normalized().inner()[0], $e);
             assert_eq!(Wrange::<u8>::intersection(&$b, &$a).normalized().inner()[0], $e);
         };
     }
 
-    macro_rules! assert_intersects_double {
+    macro_rules! assert_intersection_double {
         ($a: expr, $b: expr, $e1: expr, $e2: expr $(,)?) => {
             assert_eq!(
                 *Wrange::<u8>::intersection(&$a, &$b).normalized().inner(),
@@ -156,54 +186,54 @@ mod tests {
     }
 
     #[test]
-    fn test_intersections_full_empty() {
+    fn test_intersection_full_empty() {
         use Wrange::*;
 
-        assert_intersects_single!(Full, Full, Full);
-        assert_intersects_single!(Full, Empty, Empty);
-        assert_intersects_single!(Empty, Full, Empty);
-        assert_intersects_single!(Empty, Empty, Empty);
+        assert_intersection_single!(Full, Full, Full);
+        assert_intersection_single!(Full, Empty, Empty);
+        assert_intersection_single!(Empty, Full, Empty);
+        assert_intersection_single!(Empty, Empty, Empty);
     }
 
     #[test]
-    fn test_intersections_convergent_convergent() {
-        assert_intersects_single!(
+    fn test_intersection_convergent_convergent() {
+        assert_intersection_single!(
             gfx("  o-----o       "),
             gfx("     o----o     "),
             gfx("     o--o       "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("     o----o     "),
             gfx("  o-----o       "),
             gfx("     o--o       "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("  o----o       "),
             gfx("          o--o "),
             gfx("               "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("          o--o "),
             gfx("  o----o       "),
             gfx("               "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("       o----o  "),
             gfx("  o----o       "),
             gfx("       o       "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("       x----o  "),
             gfx("  o----o       "),
-            gfx("       o       "),
+            gfx("               "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("       x----o  "),
             gfx("  o----x       "),
             gfx("               "),
@@ -211,88 +241,141 @@ mod tests {
     }
 
     #[test]
-    fn test_intersections_divergent_divergent() {
-        assert_intersects_single!(
+    fn test_intersection_divergent_divergent() {
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("-----o   o------"),
             gfx("---o        o---"),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
-            gfx("-o       o------"),
-            gfx("-o          o---"),
+            gfx("-x       o------"),
+            gfx("-x          o---"),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("-------o       o"),
             gfx("---o           o"),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("o              o"),
             gfx("o              o"),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("o              o"),
             gfx("o              o"),
         );
 
-        assert_intersects_single!(
-            gfx("x              o"),
-            gfx("o              x"),
-            gfx("o              o"),
+        assert_intersection_double!(
+            gfx("----o    o------"),
+            gfx("-----------o o--"),
+            gfx("         o-o    "),
+            gfx("             o-o"),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("x              o"),
             gfx("o              x"),
+            gfx("x              x"),
+        );
+
+        assert_intersection_single!(
+            gfx("x              o"),
             gfx("o              o"),
+            gfx("x              o"),
+        );
+
+        assert_intersection_single!(
+            gfx("-----------x   o"),
+            gfx("o          o-----"),
+            gfx("                 "),
         );
     }
 
     #[test]
-    fn test_intersections_divergent_convergent() {
-        assert_intersects_single!(
+    fn test_intersection_divergent_convergent() {
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("     o----o     "),
             gfx("                "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---x        x---"),
             gfx("     o----o     "),
             gfx("                "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx(" o-----o        "),
             gfx(" o-o            "),
         );
 
-        assert_intersects_single!(
+        assert_intersection_single!(
             gfx("---o        o---"),
             gfx("        o-----o "),
             gfx("            o-o "),
         );
 
-        assert_intersects_double!(
+        assert_intersection_double!(
             gfx("----o      o----"),
             gfx(" o------------o "),
             gfx(" o--o           "),
             gfx("           o--o "),
         );
+
+        assert_intersection_single!(
+            gfx("---x x----------"),
+            gfx("    o           "),
+            gfx("                "),
+        );
+
+        assert_intersection_single!(
+            gfx("---o        o---"),
+            gfx("   x            "),
+            gfx("                "),
+        );
+
+        assert_intersection_single!(
+            gfx("---o        o---"),
+            gfx("            x   "),
+            gfx("                "),
+        );
+
+        assert_intersection_single!(
+            gfx("---o        o---"),
+            gfx("   x--------x   "),
+            gfx("                "),
+        );
+
+        assert_intersection_single!(
+            gfx("---x        x---"),
+            gfx("   o--------o   "),
+            gfx("                "),
+        );
+
+        assert_intersection_single!(
+            gfx("---x        o---"),
+            gfx("   o--------x   "),
+            gfx("                "),
+        );
     }
 
     #[test]
-    fn test_intersections_with_overlapping_endpoints() {
-        assert_intersects_single!(gfx(" x "), gfx(" o "), gfx(" o "),);
-        assert_intersects_single!(gfx(" x "), gfx(" x "), gfx("   "),);
-        assert_intersects_single!(gfx("---"), gfx(" x "), gfx("   "),);
+    fn test_intersection_with_overlapping_endpoints() {
+        assert_intersection_single!(gfx(" x "), gfx(" o "), gfx("   "),);
+        assert_intersection_single!(gfx(" x "), gfx(" x "), gfx("   "),);
+        assert_intersection_single!(gfx("---"), gfx(" x "), gfx("   "),);
+        assert_intersection_single!(gfx("---"), gfx(" o "), gfx(" o "),);
+        assert_intersection_single!(gfx("-x-"), gfx(" o "), gfx("   "),);
+        assert_intersection_single!(gfx("-o-"), gfx(" o "), gfx(" o "),);
+        assert_intersection_single!(gfx("-o-"), gfx(" x "), gfx("   "),);
     }
 }
