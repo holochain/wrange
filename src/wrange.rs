@@ -3,7 +3,7 @@ use crate::{bound::Bounds, Bound, WrangeSet};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Wrange<T>
 where
-    T: PartialOrd + Ord + Clone + std::fmt::Debug,
+    T: PartialOrd + Clone + std::fmt::Debug,
 {
     Empty,
     Convergent(Bounds<T>),
@@ -13,7 +13,7 @@ where
 
 impl<T> Wrange<T>
 where
-    T: PartialOrd + Ord + Clone + std::fmt::Debug,
+    T: PartialOrd + Clone + std::fmt::Debug,
 {
     pub fn new(a: Bound<T>, b: Bound<T>) -> Self {
         if a > b {

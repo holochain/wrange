@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 #[derive(Debug, Copy, Clone)]
 pub enum Bound<T> {
     Exclusive(T),
@@ -6,36 +8,40 @@ pub enum Bound<T> {
 
 impl<T> PartialOrd for Bound<T>
 where
-    T: PartialOrd + Ord + Clone,
+    T: PartialOrd + Clone,
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<T> Ord for Bound<T>
-where
-    T: PartialOrd + Ord + Clone,
-{
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.inner().cmp(other.inner())
+        use Bound::*;
+        match self.inner().partial_cmp(other.inner()) {
+            Some(Ordering::Equal) => match (self, other) {
+                (Exclusive(_), Exclusive(_)) | (Inclusive(_), Inclusive(_)) => {
+                    Some(Ordering::Equal)
+                }
+                _ => None,
+            },
+            o => o,
+        }
     }
 }
 
 impl<T> PartialEq for Bound<T>
 where
-    T: PartialEq + Ord + Clone,
+    T: PartialEq + Clone,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.inner() == other.inner()
+        use Bound::*;
+        match (self, other) {
+            (Exclusive(x), Exclusive(y)) | (Inclusive(x), Inclusive(y)) => x == y,
+            _ => false,
+        }
     }
 }
 
-impl<T> Eq for Bound<T> where T: PartialEq + Ord + Clone {}
+impl<T> Eq for Bound<T> where T: PartialEq + Clone {}
 
 impl<T> Bound<T>
 where
-    T: PartialOrd + Ord + Clone,
+    T: PartialOrd + Clone,
 {
     pub fn intersection_min(a: &Self, b: &Self) -> Self {
         if a.inner() == b.inner() {
@@ -108,11 +114,11 @@ where
 #[derive(Clone, Debug, PartialEq, Eq, derive_more::Constructor)]
 pub struct Bounds<T>(pub Bound<T>, pub Bound<T>)
 where
-    T: Clone + PartialEq + Eq + PartialOrd + Ord;
+    T: Clone + PartialEq + PartialOrd;
 
 impl<T> Bounds<T>
 where
-    T: Clone + PartialEq + Eq + PartialOrd + Ord,
+    T: Clone + PartialEq + PartialOrd,
 {
     /// Perform some sensible normalization:
     /// Two overlapping (colocated) endpoints with both inclusive and exclusive
@@ -146,7 +152,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_equality() {
+    fn test_order() {
         use Bound::*;
 
         let e3 = Exclusive(3);
@@ -154,19 +160,25 @@ mod tests {
         let i3 = Inclusive(3);
         let i7 = Inclusive(7);
 
-        assert_eq!(i3.cmp(&i3), Ordering::Equal);
-        assert_eq!(i3.cmp(&e3), Ordering::Equal);
-        assert_eq!(e3.cmp(&i3), Ordering::Equal);
+        assert_eq!(i3.partial_cmp(&i3), Some(Ordering::Equal));
+        assert_eq!(i3.partial_cmp(&e3), None);
+        assert_eq!(e3.partial_cmp(&i3), None);
 
-        assert_eq!(e3.cmp(&i7), Ordering::Less);
-        assert_eq!(i3.cmp(&e7), Ordering::Less);
+        assert_eq!(e3.partial_cmp(&i7), Some(Ordering::Less));
+        assert_eq!(i3.partial_cmp(&e7), Some(Ordering::Less));
 
-        assert_eq!(e7.cmp(&i3), Ordering::Greater);
-        assert_eq!(i7.cmp(&e3), Ordering::Greater);
+        assert_eq!(e7.partial_cmp(&i3), Some(Ordering::Greater));
+        assert_eq!(i7.partial_cmp(&e3), Some(Ordering::Greater));
 
-        assert!(e3 <= i3);
-        assert!(i3 <= e3);
-        assert!(i3 == e3);
+        assert!(i3 != e3);
+        assert!(!(e3 < i3));
+        assert!(!(i3 < e3));
+        assert!(!(e3 > i3));
+        assert!(!(i3 > e3));
+
+        assert!(e3 <= i7);
+        assert!(i3 <= e7);
+        assert!(i3 != e7);
     }
 
     #[test]
