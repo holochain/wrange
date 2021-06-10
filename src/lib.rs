@@ -5,7 +5,7 @@
 //! of the ranges [MIN, end] + [start, MAX].
 
 mod bound;
-pub use bound::Bound;
+pub use bound::{Bound, Bounds};
 
 mod wrange;
 pub use wrange::Wrange;
@@ -13,5 +13,4 @@ pub use wrange::Wrange;
 mod wrange_set;
 pub use wrange_set::WrangeSet;
 
-#[cfg(test)]
-mod test_gfx;
+pub mod gfx;

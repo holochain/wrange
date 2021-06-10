@@ -106,7 +106,7 @@ where
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, derive_more::Constructor)]
-pub struct Bounds<T>(pub(crate) Bound<T>, pub(crate) Bound<T>)
+pub struct Bounds<T>(pub Bound<T>, pub Bound<T>)
 where
     T: Clone + PartialEq + Eq + PartialOrd + Ord;
 
