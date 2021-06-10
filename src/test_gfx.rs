@@ -1,7 +1,5 @@
 use crate::*;
 
-const LEN: usize = 8;
-
 fn char_to_bound((i, s): (usize, &str)) -> Bound<u8> {
     match s {
         "x" | "X" => Bound::Exclusive(i as u8),
@@ -11,16 +9,17 @@ fn char_to_bound((i, s): (usize, &str)) -> Bound<u8> {
 }
 
 pub fn gfx(s: &str) -> Wrange<u8> {
-    assert_eq!(s.len(), LEN);
     let pat = ['o', 'O', 'x', 'X'];
     let mut endpoints = s.match_indices(&pat[..]);
-    let p0 = endpoints.next().unwrap();
-    match endpoints.next() {
-        None => {
+    let p0 = endpoints.next();
+    let p1 = endpoints.next();
+    match (p0, p1) {
+        (None, None) => Wrange::Empty,
+        (Some(p0), None) => {
             let bound = char_to_bound(p0);
             Wrange::new(bound.clone(), bound)
         }
-        Some(p1) => {
+        (Some(p0), Some(p1)) => {
             assert!(endpoints.next().is_none(), "must be at most two endpoints");
 
             let middle = s
@@ -42,6 +41,7 @@ pub fn gfx(s: &str) -> Wrange<u8> {
                 panic!("Malformed graphical representation: |{}|", s);
             }
         }
+        (None, Some(_)) => unreachable!(),
     }
 }
 
