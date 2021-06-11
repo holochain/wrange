@@ -99,11 +99,36 @@ where
                 }
             }
 
-            (Divergent(Bounds(a0, a1)), Divergent(Bounds(b0, b1))) => vec![Self::new(
-                Bound::intersection_max(&a0, &b0),
-                Bound::intersection_min(&a1, &b1),
-            )]
-            .into(),
+            (Divergent(Bounds(a0, a1)), Divergent(Bounds(b0, b1))) => {
+                if a0 > b0 {
+                    // flip it so that a0 <= b0 always
+                    Self::intersection(b, a)
+                } else if a0 <= b1 {
+                    // e.g.
+                    // |----o    o------|
+                    // |-----------o o--|
+                    vec![
+                        Self::new(
+                            Bound::intersection_min(a0, b1),
+                            Bound::intersection_max(a0, b1),
+                        ),
+                        Self::new(
+                            Bound::intersection_max(b0, a1),
+                            Bound::intersection_min(b0, a1),
+                        ),
+                    ]
+                    .into()
+                } else {
+                    // e.g.
+                    // |-----o   o------|
+                    // |---o        o---|
+                    vec![Self::new(
+                        Bound::intersection_max(&a0, &b0),
+                        Bound::intersection_min(&a1, &b1),
+                    )]
+                    .into()
+                }
+            }
 
             (Convergent(Bounds(_, _)), Divergent(Bounds(_, _))) => Self::intersection(b, a),
 

@@ -167,9 +167,16 @@ fn test_intersection_divergent_divergent() {
     );
 
     assert_intersection_single!(
-        gfx("-----------x   o"),
+        gfx("-----------x    o"),
         gfx("o          o-----"),
-        gfx("                 "),
+        gfx("o               o"),
+    );
+
+    assert_intersection_double!(
+        gfx("-----------o    o"),
+        gfx("o          o-----"),
+        gfx("           o     "),
+        gfx("o               o"),
     );
 }
 

@@ -8,7 +8,7 @@ mod bound;
 pub use bound::{Bound, Bounds};
 
 mod wrange;
-pub use wrange::Wrange;
+pub use crate::wrange::Wrange;
 
 mod wrange_set;
 pub use wrange_set::WrangeSet;
