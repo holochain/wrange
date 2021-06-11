@@ -3,19 +3,19 @@ use wrange::Wrange;
 
 macro_rules! assert_intersection_single {
         ($a: expr, $b: expr, $e: expr $(,)?) => {
-            assert_eq!(Wrange::<u8>::intersection(&$a, &$b).normalized().inner()[0], $e);
-            assert_eq!(Wrange::<u8>::intersection(&$b, &$a).normalized().inner()[0], $e);
+            assert_eq!(Wrange::<u8>::intersection(&$a, &$b).normalized().to_vec()[0], $e);
+            assert_eq!(Wrange::<u8>::intersection(&$b, &$a).normalized().to_vec()[0], $e);
         };
     }
 
 macro_rules! assert_intersection_double {
     ($a: expr, $b: expr, $e1: expr, $e2: expr $(,)?) => {
         assert_eq!(
-            *Wrange::<u8>::intersection(&$a, &$b).normalized().inner(),
+            *Wrange::<u8>::intersection(&$a, &$b).normalized().to_vec(),
             vec![$e1, $e2]
         );
         assert_eq!(
-            *Wrange::<u8>::intersection(&$b, &$a).normalized().inner(),
+            *Wrange::<u8>::intersection(&$b, &$a).normalized().to_vec(),
             vec![$e1, $e2]
         );
     };
