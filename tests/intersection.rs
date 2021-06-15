@@ -2,22 +2,9 @@ use wrange::ascii::ascii;
 use wrange::{Wrange, WrangeSet};
 
 macro_rules! assert_intersection {
-        ($a: expr, $b: expr, $e: expr $(,)?) => {
-            assert_eq!(WrangeSet::<u8>::intersection(&$a, &$b).normalized(), $e);
-            assert_eq!(WrangeSet::<u8>::intersection(&$b, &$a).normalized(), $e);
-        };
-    }
-
-macro_rules! assert_intersection_double {
-    ($a: expr, $b: expr, $e1: expr, $e2: expr $(,)?) => {
-        assert_eq!(
-            WrangeSet::<u8>::intersection(&$a, &$b).normalized(),
-            vec![$e1.to_vec()[0].clone(), $e2.to_vec()[0].clone()].into()
-        );
-        assert_eq!(
-            WrangeSet::<u8>::intersection(&$b, &$a).normalized(),
-            vec![$e1.to_vec()[0].clone(), $e2.to_vec()[0].clone()].into()
-        );
+    ($a: expr, $b: expr, $e: expr $(,)?) => {
+        assert_eq!(WrangeSet::<u8>::intersection(&$a, &$b).normalized(), $e);
+        assert_eq!(WrangeSet::<u8>::intersection(&$b, &$a).normalized(), $e);
     };
 }
 
@@ -114,18 +101,16 @@ fn test_intersection_divergent_divergent() {
         ascii("o              o"),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("----o    o------"),
         ascii("-----------o o--"),
-        ascii("         o-o    "),
-        ascii("----o        o--"),
+        ascii("----o    o-o o--"),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("------o    o----"),
         ascii("--o o-----------"),
-        ascii("    o-o         "),
-        ascii("--o        o----"),
+        ascii("--o o-o    o----"),
     );
 
     assert_intersection!(
@@ -134,11 +119,10 @@ fn test_intersection_divergent_divergent() {
         ascii("----x      o----"),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("----x    o------"),
         ascii("---------o o----"),
-        ascii("         o      "),
-        ascii("----x      o----"),
+        ascii("----x    o o----"),
     );
 
     assert_intersection!(
@@ -147,11 +131,10 @@ fn test_intersection_divergent_divergent() {
         ascii("--o        o----"),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("------o    o----"),
         ascii("--o   o---------"),
-        ascii("      o         "),
-        ascii("--o        o----"),
+        ascii("--o   o    o----"),
     );
 
     assert_intersection!(
@@ -172,11 +155,10 @@ fn test_intersection_divergent_divergent() {
         ascii("o               o"),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("-----------o    o"),
         ascii("o          o-----"),
-        ascii("           o     "),
-        ascii("o               o"),
+        ascii("o          o    o"),
     );
 }
 
@@ -206,11 +188,10 @@ fn test_intersection_divergent_convergent() {
         ascii("            o-o "),
     );
 
-    assert_intersection_double!(
+    assert_intersection!(
         ascii("----o      o----"),
         ascii(" o------------o "),
-        ascii(" o--o           "),
-        ascii("           o--o "),
+        ascii(" o--o      o--o "),
     );
 
     assert_intersection!(

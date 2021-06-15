@@ -179,15 +179,12 @@ mod tests {
             ]
             .into()
         );
-
-        // These are all equivalent to Full, but still valid
-        // TODO: more intelligent equality checks
     }
 
     #[test]
     fn single_checks() {
         use Bound::*;
-        use Wrange::*;
+
         assert_eq!(ascii("        ").to_vec()[0], Wrange::Empty);
         assert_eq!(ascii("--------").to_vec()[0], Wrange::Full);
 
