@@ -1,9 +1,10 @@
 use crate::{bound::Bounds, Bound, WrangeSet};
+use std::hash::Hash;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Wrange<T>
 where
-    T: PartialOrd + Ord + Clone + std::fmt::Debug,
+    T: PartialOrd + Ord + Hash + Clone + std::fmt::Debug,
 {
     Empty,
     Convergent(Bounds<T>),
@@ -13,7 +14,7 @@ where
 
 impl<T> Wrange<T>
 where
-    T: PartialOrd + Ord + Clone + std::fmt::Debug,
+    T: PartialOrd + Ord + Hash + Clone + std::fmt::Debug,
 {
     pub fn new(a: Bound<T>, b: Bound<T>) -> Self {
         if a > b {

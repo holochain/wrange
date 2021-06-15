@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Hash)]
 pub enum Bound<T> {
     Exclusive(T),
     Inclusive(T),
@@ -115,7 +115,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, derive_more::Constructor)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, derive_more::Constructor)]
 pub struct Bounds<T>(pub Bound<T>, pub Bound<T>)
 where
     T: Clone + PartialEq + PartialOrd;
@@ -146,34 +146,6 @@ where
             }
             _ => self,
         }
-    }
-}
-
-impl<T> Ord for Bounds<T>
-where
-    T: Ord + Clone + std::fmt::Debug,
-{
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        use Bound::*;
-        if let Some(o) = self.partial_cmp(other) {
-            o
-        } else {
-            assert!(self.0.overlaps(&self.1));
-            match self {
-                Bounds(Exclusive(_), Inclusive(_)) => Ordering::Less,
-                Bounds(Inclusive(_), Exclusive(_)) => Ordering::Greater,
-                _ => Ordering::Equal,
-            }
-        }
-    }
-}
-
-impl<T> PartialOrd for Bounds<T>
-where
-    T: Ord + Clone + std::fmt::Debug,
-{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
     }
 }
 

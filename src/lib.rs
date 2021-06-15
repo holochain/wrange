@@ -13,4 +13,4 @@ pub use crate::wrange::Wrange;
 mod wrange_set;
 pub use wrange_set::WrangeSet;
 
-pub mod gfx;
+pub mod ascii;

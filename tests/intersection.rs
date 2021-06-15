@@ -1,22 +1,22 @@
-use wrange::gfx::gfx;
-use wrange::Wrange;
+use wrange::ascii::ascii;
+use wrange::{Wrange, WrangeSet};
 
-macro_rules! assert_intersection_single {
+macro_rules! assert_intersection {
         ($a: expr, $b: expr, $e: expr $(,)?) => {
-            assert_eq!(Wrange::<u8>::intersection(&$a, &$b).normalized().to_vec()[0], $e);
-            assert_eq!(Wrange::<u8>::intersection(&$b, &$a).normalized().to_vec()[0], $e);
+            assert_eq!(WrangeSet::<u8>::intersection(&$a, &$b).normalized(), $e);
+            assert_eq!(WrangeSet::<u8>::intersection(&$b, &$a).normalized(), $e);
         };
     }
 
 macro_rules! assert_intersection_double {
     ($a: expr, $b: expr, $e1: expr, $e2: expr $(,)?) => {
         assert_eq!(
-            *Wrange::<u8>::intersection(&$a, &$b).normalized().to_vec(),
-            vec![$e1, $e2]
+            WrangeSet::<u8>::intersection(&$a, &$b).normalized(),
+            vec![$e1.to_vec()[0].clone(), $e2.to_vec()[0].clone()].into()
         );
         assert_eq!(
-            *Wrange::<u8>::intersection(&$b, &$a).normalized().to_vec(),
-            vec![$e1, $e2]
+            WrangeSet::<u8>::intersection(&$b, &$a).normalized(),
+            vec![$e1.to_vec()[0].clone(), $e2.to_vec()[0].clone()].into()
         );
     };
 }
@@ -25,238 +25,238 @@ macro_rules! assert_intersection_double {
 fn test_intersection_full_empty() {
     use Wrange::*;
 
-    assert_intersection_single!(Full, Full, Full);
-    assert_intersection_single!(Full, Empty, Empty);
-    assert_intersection_single!(Empty, Full, Empty);
-    assert_intersection_single!(Empty, Empty, Empty);
+    assert_intersection!(Full.into(), Full.into(), Full.into());
+    assert_intersection!(Full.into(), Empty.into(), Empty.into());
+    assert_intersection!(Empty.into(), Full.into(), Empty.into());
+    assert_intersection!(Empty.into(), Empty.into(), Empty.into());
 }
 
 #[test]
 fn test_intersection_convergent_convergent() {
-    assert_intersection_single!(
-        gfx("  o---------o   "),
-        gfx("     o----o     "),
-        gfx("     o----o     "),
+    assert_intersection!(
+        ascii("  o---------o   "),
+        ascii("     o----o     "),
+        ascii("     o----o     "),
     );
 
-    assert_intersection_single!(
-        gfx("  o-----o       "),
-        gfx("     o----o     "),
-        gfx("     o--o       "),
+    assert_intersection!(
+        ascii("  o-----o       "),
+        ascii("     o----o     "),
+        ascii("     o--o       "),
     );
 
-    assert_intersection_single!(
-        gfx("     o----o     "),
-        gfx("  o-----o       "),
-        gfx("     o--o       "),
+    assert_intersection!(
+        ascii("     o----o     "),
+        ascii("  o-----o       "),
+        ascii("     o--o       "),
     );
 
-    assert_intersection_single!(
-        gfx("  o----o       "),
-        gfx("          o--o "),
-        gfx("               "),
+    assert_intersection!(
+        ascii("  o----o       "),
+        ascii("          o--o "),
+        ascii("               "),
     );
 
-    assert_intersection_single!(
-        gfx("          o--o "),
-        gfx("  o----o       "),
-        gfx("               "),
+    assert_intersection!(
+        ascii("          o--o "),
+        ascii("  o----o       "),
+        ascii("               "),
     );
 
-    assert_intersection_single!(
-        gfx("  o----o       "),
-        gfx("       o----o  "),
-        gfx("       o       "),
+    assert_intersection!(
+        ascii("  o----o       "),
+        ascii("       o----o  "),
+        ascii("       o       "),
     );
 
-    assert_intersection_single!(
-        gfx("  o----o       "),
-        gfx("       x----o  "),
-        gfx("               "),
+    assert_intersection!(
+        ascii("  o----o       "),
+        ascii("       x----o  "),
+        ascii("               "),
     );
 
-    assert_intersection_single!(
-        gfx("  o----x       "),
-        gfx("       x----o  "),
-        gfx("               "),
+    assert_intersection!(
+        ascii("  o----x       "),
+        ascii("       x----o  "),
+        ascii("               "),
     );
 }
 
 #[test]
 fn test_intersection_divergent_divergent() {
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("-----o   o------"),
-        gfx("---o        o---"),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("-----o   o------"),
+        ascii("---o        o---"),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("-x       o------"),
-        gfx("-x          o---"),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("-x       o------"),
+        ascii("-x          o---"),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("-------o       o"),
-        gfx("---o           o"),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("-------o       o"),
+        ascii("---o           o"),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("o              o"),
-        gfx("o              o"),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("o              o"),
+        ascii("o              o"),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("o              o"),
-        gfx("o              o"),
-    );
-
-    assert_intersection_double!(
-        gfx("----o    o------"),
-        gfx("-----------o o--"),
-        gfx("         o-o    "),
-        gfx("----o        o--"),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("o              o"),
+        ascii("o              o"),
     );
 
     assert_intersection_double!(
-        gfx("------o    o----"),
-        gfx("--o o-----------"),
-        gfx("    o-o         "),
-        gfx("--o        o----"),
-    );
-
-    assert_intersection_single!(
-        gfx("----x    o------"),
-        gfx("---------x o----"),
-        gfx("----x      o----"),
+        ascii("----o    o------"),
+        ascii("-----------o o--"),
+        ascii("         o-o    "),
+        ascii("----o        o--"),
     );
 
     assert_intersection_double!(
-        gfx("----x    o------"),
-        gfx("---------o o----"),
-        gfx("         o      "),
-        gfx("----x      o----"),
+        ascii("------o    o----"),
+        ascii("--o o-----------"),
+        ascii("    o-o         "),
+        ascii("--o        o----"),
     );
 
-    assert_intersection_single!(
-        gfx("------o    o----"),
-        gfx("--o   x---------"),
-        gfx("--o        o----"),
-    );
-
-    assert_intersection_double!(
-        gfx("------o    o----"),
-        gfx("--o   o---------"),
-        gfx("      o         "),
-        gfx("--o        o----"),
-    );
-
-    assert_intersection_single!(
-        gfx("x              o"),
-        gfx("o              x"),
-        gfx("x              x"),
-    );
-
-    assert_intersection_single!(
-        gfx("x              o"),
-        gfx("o              o"),
-        gfx("x              o"),
-    );
-
-    assert_intersection_single!(
-        gfx("-----------x    o"),
-        gfx("o          o-----"),
-        gfx("o               o"),
+    assert_intersection!(
+        ascii("----x    o------"),
+        ascii("---------x o----"),
+        ascii("----x      o----"),
     );
 
     assert_intersection_double!(
-        gfx("-----------o    o"),
-        gfx("o          o-----"),
-        gfx("           o     "),
-        gfx("o               o"),
+        ascii("----x    o------"),
+        ascii("---------o o----"),
+        ascii("         o      "),
+        ascii("----x      o----"),
+    );
+
+    assert_intersection!(
+        ascii("------o    o----"),
+        ascii("--o   x---------"),
+        ascii("--o        o----"),
+    );
+
+    assert_intersection_double!(
+        ascii("------o    o----"),
+        ascii("--o   o---------"),
+        ascii("      o         "),
+        ascii("--o        o----"),
+    );
+
+    assert_intersection!(
+        ascii("x              o"),
+        ascii("o              x"),
+        ascii("x              x"),
+    );
+
+    assert_intersection!(
+        ascii("x              o"),
+        ascii("o              o"),
+        ascii("x              o"),
+    );
+
+    assert_intersection!(
+        ascii("-----------x    o"),
+        ascii("o          o-----"),
+        ascii("o               o"),
+    );
+
+    assert_intersection_double!(
+        ascii("-----------o    o"),
+        ascii("o          o-----"),
+        ascii("           o     "),
+        ascii("o               o"),
     );
 }
 
 #[test]
 fn test_intersection_divergent_convergent() {
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("     o----o     "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("     o----o     "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---x        x---"),
-        gfx("     o----o     "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---x        x---"),
+        ascii("     o----o     "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx(" o-----o        "),
-        gfx(" o-o            "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii(" o-----o        "),
+        ascii(" o-o            "),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("        o-----o "),
-        gfx("            o-o "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("        o-----o "),
+        ascii("            o-o "),
     );
 
     assert_intersection_double!(
-        gfx("----o      o----"),
-        gfx(" o------------o "),
-        gfx(" o--o           "),
-        gfx("           o--o "),
+        ascii("----o      o----"),
+        ascii(" o------------o "),
+        ascii(" o--o           "),
+        ascii("           o--o "),
     );
 
-    assert_intersection_single!(
-        gfx("---x x----------"),
-        gfx("    o           "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---x x----------"),
+        ascii("    o           "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("   x            "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("   x            "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("            x   "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("            x   "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---o        o---"),
-        gfx("   x--------x   "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---o        o---"),
+        ascii("   x--------x   "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---x        x---"),
-        gfx("   o--------o   "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---x        x---"),
+        ascii("   o--------o   "),
+        ascii("                "),
     );
 
-    assert_intersection_single!(
-        gfx("---x        o---"),
-        gfx("   o--------x   "),
-        gfx("                "),
+    assert_intersection!(
+        ascii("---x        o---"),
+        ascii("   o--------x   "),
+        ascii("                "),
     );
 }
 
 #[test]
 fn test_intersection_with_overlapping_endpoints() {
-    assert_intersection_single!(gfx(" x "), gfx(" o "), gfx("   "),);
-    assert_intersection_single!(gfx(" x "), gfx(" x "), gfx("   "),);
-    assert_intersection_single!(gfx("---"), gfx(" x "), gfx("   "),);
-    assert_intersection_single!(gfx("---"), gfx(" o "), gfx(" o "),);
-    assert_intersection_single!(gfx("-x-"), gfx(" o "), gfx("   "),);
-    assert_intersection_single!(gfx("-o-"), gfx(" o "), gfx(" o "),);
-    assert_intersection_single!(gfx("-o-"), gfx(" x "), gfx("   "),);
+    assert_intersection!(ascii(" x "), ascii(" o "), ascii("   "),);
+    assert_intersection!(ascii(" x "), ascii(" x "), ascii("   "),);
+    assert_intersection!(ascii("---"), ascii(" x "), ascii("   "),);
+    assert_intersection!(ascii("---"), ascii(" o "), ascii(" o "),);
+    assert_intersection!(ascii("-x-"), ascii(" o "), ascii("   "),);
+    assert_intersection!(ascii("-o-"), ascii(" o "), ascii(" o "),);
+    assert_intersection!(ascii("-o-"), ascii(" x "), ascii("   "),);
 }
